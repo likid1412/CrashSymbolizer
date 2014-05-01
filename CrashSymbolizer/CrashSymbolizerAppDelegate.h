@@ -10,15 +10,17 @@
 
 @interface CrashSymbolizerAppDelegate : NSObject <NSApplicationDelegate>
 
-@property (assign) IBOutlet NSWindow *window;
-@property (assign) IBOutlet NSTextView *argumentsTextView;
-@property (assign) IBOutlet NSTextView *resultTextView;
-@property (assign) IBOutlet NSTextField *archTextField;
-@property (assign) IBOutlet NSTextField *appFilePathTextField;
-@property (assign) IBOutlet NSButton *checkBoxForShowAllInfos;
+@property (weak) IBOutlet NSWindow *window;
+@property (unsafe_unretained) IBOutlet NSTextView *argumentsTextView;
+@property (unsafe_unretained) IBOutlet NSTextView *resultTextView;
+@property (weak) IBOutlet NSTextField *archTextField;
+@property (weak) IBOutlet NSTextField *appFilePathTextField;
+@property (weak) IBOutlet NSButton *checkBoxForShowAllInfos;
 @property (assign, nonatomic) BOOL shouldShowAllInfos;
 
 - (IBAction)showAllInfos:(NSButton *)sender;
 - (IBAction)transfer:(NSButton *)sender;
+
+- (void)logError:(NSString *)msg;
 
 @end

@@ -9,10 +9,12 @@
 #import "CrashSymbolizerAppDelegate.h"
 
 #import "StackAddressProcessor.h"
+#import "TaskManager.h"
 
 @interface CrashSymbolizerAppDelegate ()
 
-@property (retain, nonatomic) StackAddressProcessor *processor;
+@property (strong, nonatomic) StackAddressProcessor *processor;
+@property (strong, nonatomic) NSArray *ARMs;
 
 @end
 
@@ -21,14 +23,21 @@
 - (StackAddressProcessor *)processor
 {
     if (_processor == nil)
+    {
         _processor = [[StackAddressProcessor alloc] init];
+    }
 
     return _processor;
 }
 
-- (void)dealloc
+- (NSArray *)ARMs
 {
-    [super dealloc];
+    if (_ARMs == nil)
+    {
+        _ARMs = [[NSArray alloc] initWithObjects:@"armv7", @"armv7s", @"arm64", nil];
+    }
+
+    return _ARMs;
 }
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification
@@ -53,16 +62,29 @@
         return;
     }
 
-    if ( ![[NSFileManager defaultManager] fileExistsAtPath:appFilePath])
+    if ([appFilePath hasPrefix:@"~/"])
     {
-        [self logError:[NSString stringWithFormat:@"file does not exist at path: %@", appFilePath]];
-        return;
+        NSString *userName = [[TaskManager sharedManager] executeTask:@"/usr/bin/id" arguments:@[@"-un"] error:nil];
+
+        // user command "/user/bin/id -un", result has a \n char at the end, so remove the last word
+        userName = [userName substringToIndex:userName.length - 1];
+
+        appFilePath = [appFilePath stringByReplacingCharactersInRange:NSMakeRange(0, 1)
+                                                           withString:[NSString stringWithFormat:@"/Users/%@", userName]];
+
+        DLog(@"userDocument:%@, appFilePath: %@", userName, appFilePath);
     }
 
+//    if ( ![[NSFileManager defaultManager] fileExistsAtPath:appFilePath])
+//    {
+//        [self logError:[NSString stringWithFormat:@"file does not exist at path: %@", appFilePath]];
+//        return;
+//    }
+
     NSString *armv = self.archTextField.stringValue;
-    if ( ![armv isEqualToString:@"armv7"] && ![armv isEqualToString:@"armv7s"])
+    if ([self isValidARM:armv] == NO)
     {
-        [self logError:[NSString stringWithFormat:@"'armv' argument shuold be armv7/armv7s"]];
+        [self logError:[NSString stringWithFormat:@"'arm' argument shuold be one of the following valid arm: \n%@", self.ARMs]];
         return;
     }
 
@@ -72,7 +94,6 @@
 
 	NSAttributedString *as = [[NSAttributedString alloc] initWithString:symbolizations];
     [self.resultTextView.textStorage setAttributedString:as];
-    [as release];
 }
 
 - (void)scrollToBottom
@@ -99,6 +120,20 @@
 
 	[[self.resultTextView textStorage] appendAttributedString:as];
 	[self scrollToBottom];
+}
+
+- (BOOL)isValidARM:(NSString *)armv
+{
+    __block BOOL isValidARM = NO;
+    [self.ARMs enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+        if ([armv isEqualToString:obj])
+        {
+            *stop = YES;
+            isValidARM = YES;
+        }
+    }];
+
+    return isValidARM;
 }
 
 @end

@@ -12,19 +12,13 @@
 
 @interface StackAddressProcessor ()
 
-@property (retain, nonatomic) NSDictionary *params;
+@property (strong, nonatomic) NSDictionary *params;
 @property (assign, nonatomic) unsigned int vmAddr;
 
 @end
 
 @implementation StackAddressProcessor
 
-- (void)dealloc
-{
-    self.params = nil;
-
-    [super dealloc];
-}
 
 - (NSString *)symbolizeCrashReport:(NSString *)report params:(NSDictionary *)params
 {
@@ -48,12 +42,18 @@
 
     NSArray *encodedAddrs = [self processCrashReport:report];
 
+    NSError *error = nil;
     // 先找到 vmAddr，再进行符号化
-    [self findVMAddr];
+    [self findVMAddr:&error];
+
+    if (error)
+    {
+        return error.localizedDescription;
+    }
 
     // 解码
-    __block StackAddressProcessor *selfObj = self;
-    __block NSMutableArray *decodedStrings = [NSMutableArray arrayWithCapacity:encodedAddrs.count];
+    __weak StackAddressProcessor *selfObj = self;
+    __weak NSMutableArray *decodedStrings = [NSMutableArray arrayWithCapacity:encodedAddrs.count];
 
 
     [encodedAddrs enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop)
@@ -62,7 +62,15 @@
         NSString *key = addr.allKeys.lastObject;
         NSString *value = addr.allValues.lastObject;
 
-        [decodedStrings addObject:[NSString stringWithFormat:@"%@ %@", value, [selfObj symbolize:key]]];
+        NSError *sError = nil;
+        NSString *symbolizedString = [selfObj symbolize:key error:&sError];
+        if (symbolizedString == nil)
+        {
+            *stop = YES;
+            [AppDelegate logError:sError.localizedDescription];
+        }
+
+        [decodedStrings addObject:[NSString stringWithFormat:@"%@ %@", value, symbolizedString]];
     }];
 
     return [decodedStrings componentsJoinedByString:@"\n"];
@@ -73,10 +81,11 @@
 
  @ret 虚拟地址
  */
-- (NSString *)generateVMAddr
+- (NSString *)generateVMAddr:(NSError **)error
 {
     NSString *VMAddr = [[TaskManager sharedManager] executeTask:[self path:@"otool"]
-                                                      arguments:@[@"-arch", self.params[kArmv], @"-l", self.params[kAppFilePath]]];
+                                                      arguments:@[@"-arch", self.params[kArmv], @"-l", self.params[kAppFilePath]] error:error];
+
 
     return VMAddr;
 }
@@ -88,7 +97,7 @@
 
  @ret 符号化后的字符串，若地址没错，正常为函数名
  */
-- (NSString *)symbolize:(NSString *)stackAddr
+- (NSString *)symbolize:(NSString *)stackAddr error:(NSError **)error
 {
     NSString *stringOfRMAddr = [self generateRMAddrViaStackAddr:stackAddr];
 
@@ -98,7 +107,8 @@
                                                                          self.params[kArmv],
                                                                          @"-o",
                                                                          self.params[kAppFilePath],
-                                                                         stringOfRMAddr]];
+                                                                         stringOfRMAddr]
+                                                                 error:error];
 
     return symbolization;
 }
@@ -111,18 +121,29 @@
 /*
  @fn 获取虚拟内存地址
  */
-- (void)findVMAddr
+- (void)findVMAddr:(NSError **)error
 {
-    NSString *VMAddr = [self generateVMAddr];
+    NSString *VMAddr = [self generateVMAddr:error];
+
+    if (VMAddr == nil)
+    {
+        return;
+    }
 
     NSString *grepResult =
     [self writeAndReadWithTempFile:VMAddr task:^id (NSString *tempFile) {
         return [[TaskManager sharedManager] executeTask:[self path:@"grep"]
-                                              arguments:@[@"-A", @"1", @"-m", @"2", @"__TEXT", tempFile]];
+                                              arguments:@[@"-A", @"1", @"-m", @"2", @"__TEXT", tempFile]
+                                                  error:error];
     }];
 
+    if (grepResult == nil)
+    {
+        return;
+    }
+
     NSArray *components = [grepResult componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-    [grepResult release], grepResult = nil;
+    grepResult = nil;
     //    DLog(@"components: %@", components);
 
     __block NSUInteger indexOfVmaddr = 0;
@@ -241,7 +262,7 @@
     }
 
     DLog(@"%@", encodedAddrs);
-    return [[encodedAddrs copy] autorelease];
+    return [encodedAddrs copy];
 }
 
 - (NSString *)writeAndReadWithTempFile:(NSString *)string task:(WriteReadTempFileBlock)block

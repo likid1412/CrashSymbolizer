@@ -8,6 +8,8 @@
 
 #import "TaskManager.h"
 
+NSString * const LKTaskErrorDomain = @"LKTaskErrorDomain";
+
 @interface TaskManager ()
 
 
@@ -15,20 +17,14 @@
 
 @implementation TaskManager
 
-+ (TaskManager *)sharedManager
++ (instancetype)sharedManager
 {
     static TaskManager *_sharedManager = nil;
-    if (_sharedManager == nil)
-    {
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
         _sharedManager = [[TaskManager alloc] init];
-    }
-
+    });
     return _sharedManager;
-}
-
-- (void)dealloc
-{
-    [super dealloc];
 }
 
 - (NSTask *)taskWithLaunchPath:(NSString *)launchPath arguments:(NSArray *)arguments
@@ -37,7 +33,7 @@
     task.launchPath = launchPath;
     task.arguments = arguments;
 
-    return [task autorelease];
+    return task;
 }
 
 - (id)init
@@ -50,25 +46,41 @@
     return self;
 }
 
-- (NSString *)executeTask:(NSString *)command arguments:(NSArray *)arguments
+- (NSString *)executeTask:(NSString *)command arguments:(NSArray *)arguments error:(NSError **)error
 {
     NSTask *task = [self taskWithLaunchPath:command arguments:arguments];
     DLog(@"task: %@", [NSString stringWithFormat:@"%@ %@", command, [arguments componentsJoinedByString:@" "]]);
 
-    NSPipe *pipe = [NSPipe pipe];
-    [task setStandardOutput: pipe];
+    NSPipe *outputPipe = [NSPipe pipe];
+    NSPipe *errorPipe = [NSPipe pipe];
+
+    [task setStandardOutput:outputPipe];
+    [task setStandardError:errorPipe];
     
-    NSFileHandle *file = [pipe fileHandleForReading];
+    NSFileHandle *outputFile = [outputPipe fileHandleForReading];
+    NSFileHandle *errorFileHandle = [errorPipe fileHandleForReading];
 
     [task launch];
-    task.terminationHandler = ^ (NSTask *task){
-        DLog();
-    };
+//    task.terminationHandler = ^ (NSTask *task){
+//        DLog();
+//    };
 
-    // 不能使用 autorelease 奇怪 -- by Likid
-    NSString *result = [[NSString alloc] initWithData:[file readDataToEndOfFile] encoding: NSUTF8StringEncoding];
-    
-    return result;
+    NSString *errorString = [[NSString alloc] initWithData:[errorFileHandle readDataToEndOfFile] encoding:NSUTF8StringEncoding];
+
+    if (errorString.length)
+    {
+        DLog(@"error: %@", errorString);
+
+        if (error)
+        {
+            *error = [NSError errorWithDomain:LKTaskErrorDomain code:LKErrorCodeTaskError userInfo:@{ NSLocalizedDescriptionKey: errorString }];
+        }
+
+        return nil;
+    }
+
+    NSString *outputResult = [[NSString alloc] initWithData:[outputFile readDataToEndOfFile] encoding: NSUTF8StringEncoding];
+    return outputResult;
 }
 
 //- (void)taskDidTermination:(NSNotification *)notification
