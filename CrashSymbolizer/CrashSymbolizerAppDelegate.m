@@ -11,6 +11,9 @@
 #import "StackAddressProcessor.h"
 #import "TaskManager.h"
 
+NSString * const CSDefaultAppFilePath = @"~/Desktop";
+NSString * const CSKeyAppFilePath = @"AppFilePath";
+
 @interface CrashSymbolizerAppDelegate ()
 
 @property (strong, nonatomic) StackAddressProcessor *processor;
@@ -42,7 +45,14 @@
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification
 {
-    [self.appFilePathTextField setStringValue:@"/Users/hower_new/Desktop/CaiYun"];
+    NSString *filePath = [[NSUserDefaults standardUserDefaults] objectForKey:CSKeyAppFilePath];
+
+    if (filePath.length == 0)
+    {
+        filePath = CSDefaultAppFilePath;
+    }
+
+    [self.appFilePathTextField setStringValue:filePath];
     [self.archTextField setStringValue:@"armv7"];
     self.checkBoxForShowAllInfos.state = NSOffState;
 }
@@ -55,6 +65,10 @@
 
 - (IBAction)transfer:(NSButton *)sender
 {
+    if ([self isValidFilePath] == NO)
+    {
+        return;
+    }
     NSString *appFilePath = self.appFilePathTextField.stringValue;
     if ( ![appFilePath isAbsolutePath])
     {
@@ -72,8 +86,16 @@
         appFilePath = [appFilePath stringByReplacingCharactersInRange:NSMakeRange(0, 1)
                                                            withString:[NSString stringWithFormat:@"/Users/%@", userName]];
 
-        DLog(@"userDocument:%@, appFilePath: %@", userName, appFilePath);
+        DLog(@"userDocument:%@", userName);
     }
+
+    if ([appFilePath hasSuffix:@".dSYM"])
+    {
+        //MyApp.app.dSYM/Contents/Resources/DWARF
+        appFilePath = [appFilePath stringByAppendingPathComponent:@"Contents/Resources/DWARF"];
+    }
+
+    DLog(@"appFilePath: %@", appFilePath);
 
 //    if ( ![[NSFileManager defaultManager] fileExistsAtPath:appFilePath])
 //    {
@@ -134,6 +156,52 @@
     }];
 
     return isValidARM;
+}
+
+- (BOOL)isValidFilePath
+{
+    NSString *appFilePath = self.appFilePathTextField.stringValue;
+    if ( ![appFilePath isAbsolutePath])
+    {
+        [self logError:[NSString stringWithFormat:@"%@, file path is not an absolutePath", appFilePath]];
+        return NO;
+    }
+
+    if ([appFilePath hasPrefix:@"~/"])
+    {
+        NSError *error = nil;
+
+        NSString *userName = [[TaskManager sharedManager] executeTask:@"/usr/bin/id" arguments:@[@"-un"] error:&error];
+        if (userName == nil)
+        {
+            [self logError:error.localizedDescription];
+            return NO;
+        }
+
+        // user command "/user/bin/id -un", result has a \n char at the end, so remove the last word
+        userName = [userName substringToIndex:userName.length - 1];
+
+        appFilePath = [appFilePath stringByReplacingCharactersInRange:NSMakeRange(0, 1)
+                                                           withString:[NSString stringWithFormat:@"/Users/%@", userName]];
+
+        DLog(@"userDocument:%@", userName);
+    }
+
+    if ([appFilePath hasSuffix:@".dSYM"])
+    {
+        // MyApp.app.dSYM/Contents/Resources/DWARF
+        NSString *dSYMFilePath = [@"Contents/Resources/DWARF" stringByAppendingPathComponent:[StackAddressProcessor getAppName:appFilePath]];
+
+        appFilePath = [appFilePath stringByAppendingPathComponent:dSYMFilePath];
+    }
+
+    DLog(@"appFilePath: %@", appFilePath);
+
+    // save filePath
+    [[NSUserDefaults standardUserDefaults] setObject:self.appFilePathTextField.stringValue forKey:CSKeyAppFilePath];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+
+    return YES;
 }
 
 @end

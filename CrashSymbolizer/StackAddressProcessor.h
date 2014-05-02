@@ -16,6 +16,15 @@ typedef id (^WriteReadTempFileBlock)(NSString *tempFile);
 @interface StackAddressProcessor : NSObject
 
 /*
+ @fn 获取应用名称
+
+ @param appFilePath 待解析的应用路径
+
+ @ret 应用名称
+ */
++ (NSString *)getAppName:(NSString *)appFilePath;
+
+/*
  @fn 符号化崩溃日志
 
  @param report 崩溃日志字符串
@@ -33,7 +42,7 @@ typedef id (^WriteReadTempFileBlock)(NSString *tempFile);
  2   CoreFoundation                	0x3345ce02 -[NSObject(NSObject) doesNotRecognizeSelector:] + 166
  3   CoreFoundation                	0x3345b52c ___forwarding___ + 388
  4   CoreFoundation                	0x333b2f64 _CF_forwarding_prep_0 + 20
- 5   CaiYun                        	0x000760c6 0x4f000 + 159942
+ 5   MyApp                        	0x000760c6 0x4f000 + 159942
  6   UIKit                         	0x352c1ad4 -[UIApplication _handleDelegateCallbacksWithOptions:isSuspended:restoreState:] + 248
  7   UIKit                         	0x352c165e -[UIApplication _callInitializationDelegatesForURL:payload:suspended:] + 1186
  8   UIKit                         	0x352b9846 -[UIApplication _runWithURL:payload:launchOrientation:statusBarStyle:statusBarHidden:] + 694
@@ -51,6 +60,6 @@ typedef id (^WriteReadTempFileBlock)(NSString *tempFile);
  20  CoreFoundation                	0x3339fd44 CFRunLoopRunInMode + 100
  21  UIKit                         	0x352b8480 -[UIApplication _run] + 664
  22  UIKit                         	0x352b52fc UIApplicationMain + 1116
- 23  CaiYun                        	0x000736cc 0x4f000 + 149196
- 24  CaiYun                        	0x00051714 0x4f000 + 10004
+ 23  MyApp                        	0x000736cc 0x4f000 + 149196
+ 24  MyApp                        	0x00051714 0x4f000 + 10004
  */

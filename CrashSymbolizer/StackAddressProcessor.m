@@ -193,17 +193,31 @@
 
  @ret 应用名称
  */
-- (NSString *)getAppName:(NSString *)appFilePath
++ (NSString *)getAppName:(NSString *)appFilePath
 {
-    NSRange rangeOfAppName = [appFilePath rangeOfString:@"/" options:NSBackwardsSearch];
+    NSString *appName = nil;
+    NSString *lastPath = appFilePath.lastPathComponent;
 
-    if (rangeOfAppName.location == NSNotFound)
+    NSRange temp = [lastPath rangeOfString:@"."];
+    if (temp.location == NSNotFound)
     {
-        DLog(@"not found");
-        return nil;
+        appName = lastPath;
     }
-    
-    return [appFilePath substringFromIndex:NSMaxRange(rangeOfAppName)];
+    else
+    {
+        appName = [lastPath substringToIndex:temp.location];
+    }
+
+    return appName;
+//    NSRange rangeOfAppName = [appFilePath rangeOfString:@"/" options:NSBackwardsSearch];
+//
+//    if (rangeOfAppName.location == NSNotFound)
+//    {
+//        DLog(@"not found");
+//        return nil;
+//    }
+//
+//    return [appFilePath substringFromIndex:NSMaxRange(rangeOfAppName)];
 }
 
 /*
@@ -215,7 +229,7 @@
  */
 - (NSArray *)processCrashReport:(NSString *)reportString
 {
-    NSString *appName = [self getAppName:self.params[kAppFilePath]];
+    NSString *appName = [StackAddressProcessor getAppName:self.params[kAppFilePath]];
     DLog(@"appName: %@", appName);
     // 获取每一行的内容
 
@@ -246,7 +260,7 @@
         if (AppDelegate.shouldShowAllInfos)
             isEqualToAppName = YES;
         /*
-         5   CaiYun                        	0x000760c6 0x4f000 + 159942
+         5   MyApp                        	0x000760c6 0x4f000 + 159942
          0      1                                2        3    4    5
          依次对应 wordsWithoutEmptyString[0] ~ wordsWithoutEmptyString[5]
          */

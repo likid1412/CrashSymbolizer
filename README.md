@@ -9,3 +9,6 @@ usage:
 `17  UIKit                         	0x30022c42 -[UITableView _updateVisibleCellsNow:] + 1802`
 
 5. Click Transfer Button
+
+TODO List:
+1. Symbolize crash type file(.crash) directy.
