@@ -281,7 +281,7 @@
 
 - (NSString *)writeAndReadWithTempFile:(NSString *)string task:(WriteReadTempFileBlock)block
 {
-    NSString *tempFile = @"/Users/hower_new/Desktop/tempFile.txt";
+    NSString *tempFile = @"/Applications/tempFile.txt";
     [string writeToFile:tempFile atomically:YES encoding:NSUTF8StringEncoding error:NULL];
 
     NSString *ret = block(tempFile);
