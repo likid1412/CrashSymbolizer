@@ -92,10 +92,26 @@ static NSString *kExecuteModeForShellFileKey = @"ExecuteModeForShellFileKey";
     NSString *path = [[NSBundle mainBundle] pathForResource:@"symbolize" ofType:@"sh"];
     [self addExecuteModeForShellFile:path];
     
-    NSString *symbolization = [[TaskManager sharedManager] executeTask:path arguments:@[self.params[kAppFilePath], self.params[kArmv], stackAddr] error:nil];
-    DLog(@"symbolization: %@", symbolization);
-
-    return symbolization;
+    @try {
+        
+        NSString *symbolization = [[TaskManager sharedManager] executeTask:path arguments:@[self.params[kAppFilePath], self.params[kArmv], stackAddr] error:nil];
+        DLog(@"symbolization: %@", symbolization);
+        
+        return symbolization;
+    }
+    @catch (NSException *exception) {
+        if ([exception.reason isEqualToString:@"launch path not accessible"]) {
+            self.isExecuteMode = @NO;
+            [self addExecuteModeForShellFile:path];
+            
+            NSString *symbolization = [[TaskManager sharedManager] executeTask:path arguments:@[self.params[kAppFilePath], self.params[kArmv], stackAddr] error:nil];
+            DLog(@"symbolization: %@", symbolization);
+            
+            return symbolization;
+        }
+    }
+    @finally {
+    }
 }
 
 /*
