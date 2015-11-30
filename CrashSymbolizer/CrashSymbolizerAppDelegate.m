@@ -53,7 +53,7 @@ NSString * const CSKeyAppFilePath = @"AppFilePath";
     }
 
     [self.appFilePathTextField setStringValue:filePath];
-    [self.archTextField setStringValue:@"armv7"];
+    [self.armComboBox selectItemAtIndex:0];
     self.checkBoxForShowAllInfos.state = NSOffState;
 }
 
@@ -93,29 +93,48 @@ NSString * const CSKeyAppFilePath = @"AppFilePath";
     {
         //MyApp.app.dSYM/Contents/Resources/DWARF
         appFilePath = [appFilePath stringByAppendingPathComponent:@"Contents/Resources/DWARF"];
+        
+        NSError *error = nil;
+        NSArray *contents = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:appFilePath error:&error];
+        if (contents == nil) {
+            if (error) {
+                [self logError:error.localizedDescription];
+            } else {
+                [self logError:[NSString stringWithFormat:@"%@ is an empty directory!!", appFilePath]];
+            }
+            return;
+        }
+        
+        appFilePath = [appFilePath stringByAppendingPathComponent:contents.firstObject];
     }
 
     DLog(@"appFilePath: %@", appFilePath);
 
-//    if ( ![[NSFileManager defaultManager] fileExistsAtPath:appFilePath])
-//    {
-//        [self logError:[NSString stringWithFormat:@"file does not exist at path: %@", appFilePath]];
-//        return;
-//    }
-
-    NSString *armv = self.archTextField.stringValue;
-    if ([self isValidARM:armv] == NO)
+    NSString *arm = self.armComboBox.objectValueOfSelectedItem;
+    if ([self isValidARM:arm] == NO)
     {
         [self logError:[NSString stringWithFormat:@"'arm' argument shuold be one of the following valid arm: \n%@", self.ARMs]];
         return;
     }
-
-    NSString *symbolizations = [self.processor symbolizeCrashReport:self.argumentsTextView.textStorage.string
-                                                             params:@{kAppFilePath: appFilePath, kArmv: armv}];
-    DLog(@"symbolizations: %@", symbolizations);
-
-	NSAttributedString *as = [[NSAttributedString alloc] initWithString:symbolizations];
-    [self.resultTextView.textStorage setAttributedString:as];
+    
+    // clear up
+    [self.resultTextView.textStorage setAttributedString:[[NSAttributedString alloc] initWithString:@""]];
+    
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        
+        [self.processor symbolizeCrashReport:self.argumentsTextView.textStorage.string
+                                      params:@{kAppFilePath: appFilePath, kArmv: arm}
+                                  completion:^(NSString *symbolization) {
+                                      DLog(@"symbolizations: %@", symbolization);
+                                      
+                                      dispatch_async(dispatch_get_main_queue(), ^{
+                                          
+                                          NSAttributedString *as = [[NSAttributedString alloc] initWithString:[symbolization stringByAppendingString:@"\n"]];
+                                          [self.resultTextView.textStorage appendAttributedString:as];
+                                      });
+                                  }];
+        
+    });
 }
 
 - (void)scrollToBottom
@@ -133,15 +152,18 @@ NSString * const CSKeyAppFilePath = @"AppFilePath";
 
 - (void)logError:(NSString *)msg
 {
-	NSString *paragraph = [NSString stringWithFormat:@"%@\n", msg];
-
-	NSMutableDictionary *attributes = [NSMutableDictionary dictionaryWithCapacity:1];
-	[attributes setObject:[NSColor redColor] forKey:NSForegroundColorAttributeName];
-
-	NSAttributedString *as = [[NSAttributedString alloc] initWithString:paragraph attributes:attributes];
-
-	[[self.resultTextView textStorage] appendAttributedString:as];
-	[self scrollToBottom];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        
+        NSString *paragraph = [NSString stringWithFormat:@"%@\n", msg];
+        
+        NSMutableDictionary *attributes = [NSMutableDictionary dictionaryWithCapacity:1];
+        [attributes setObject:[NSColor redColor] forKey:NSForegroundColorAttributeName];
+        
+        NSAttributedString *as = [[NSAttributedString alloc] initWithString:paragraph attributes:attributes];
+        
+        [[self.resultTextView textStorage] appendAttributedString:as];
+        [self scrollToBottom];
+    });
 }
 
 - (BOOL)isValidARM:(NSString *)armv
