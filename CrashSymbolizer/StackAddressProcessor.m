@@ -10,52 +10,57 @@
 
 #import "TaskManager.h"
 
+static NSString *kExecuteModeForShellFileKey = @"ExecuteModeForShellFileKey";
+
 @interface StackAddressProcessor ()
 
 @property (strong, nonatomic) NSDictionary *params;
-@property (assign, nonatomic) unsigned int vmAddr;
+@property (copy, nonatomic) NSNumber *isExecuteMode;
 
 @end
 
 @implementation StackAddressProcessor
 
+- (NSNumber *)isExecuteMode {
+    if (_isExecuteMode == nil)
+    {
+        BOOL mode = [[NSUserDefaults standardUserDefaults] boolForKey:kExecuteModeForShellFileKey];
+        _isExecuteMode = @(mode);
+    }
+    
+    return _isExecuteMode;
+}
 
-- (NSString *)symbolizeCrashReport:(NSString *)report params:(NSDictionary *)params
+- (void)symbolizeCrashReport:(NSString *)report params:(NSDictionary *)params completion:(void (^)(NSString *symbolization))completion
 {
+    if (completion == nil) {
+        return;
+    }
+    
     NSString *ret = nil;
     
     NSString *appFilePath = params[kAppFilePath];
     if (appFilePath.length == 0)
     {
         ret = @"appFilepath is nil or length is zero";
-        return ret;
+        completion(ret);
+        
+        return;
     }
 
     NSString *armv = params[kArmv];
     if (armv.length == 0)
     {
         ret = @"armv is nil or length is zero";
-        return ret;
+        completion(ret);
+        return;
     }
 
     self.params = params;
 
     NSArray *encodedAddrs = [self processCrashReport:report];
 
-    NSError *error = nil;
-    // 先找到 vmAddr，再进行符号化
-    [self findVMAddr:&error];
-
-    if (error)
-    {
-        return error.localizedDescription;
-    }
-
     // 解码
-    __weak StackAddressProcessor *selfObj = self;
-    __weak NSMutableArray *decodedStrings = [NSMutableArray arrayWithCapacity:encodedAddrs.count];
-
-
     [encodedAddrs enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop)
     {
         NSDictionary *addr = obj;
@@ -63,31 +68,16 @@
         NSString *value = addr.allValues.lastObject;
 
         NSError *sError = nil;
-        NSString *symbolizedString = [selfObj symbolize:key error:&sError];
+        NSString *symbolizedString = [self symbolize:key error:&sError];
         if (symbolizedString == nil)
         {
             *stop = YES;
             [AppDelegate logError:sError.localizedDescription];
         }
 
-        [decodedStrings addObject:[NSString stringWithFormat:@"%@ %@", value, symbolizedString]];
+        NSString *decodedString = [NSString stringWithFormat:@"%@ %@", value, symbolizedString] ?: @"";
+        completion(decodedString);
     }];
-
-    return [decodedStrings componentsJoinedByString:@"\n"];
-}
-
-/*
- @fn 获取虚拟地址
-
- @ret 虚拟地址
- */
-- (NSString *)generateVMAddr:(NSError **)error
-{
-    NSString *VMAddr = [[TaskManager sharedManager] executeTask:[self path:@"otool"]
-                                                      arguments:@[@"-arch", self.params[kArmv], @"-l", self.params[kAppFilePath]] error:error];
-
-
-    return VMAddr;
 }
 
 /*
@@ -99,91 +89,13 @@
  */
 - (NSString *)symbolize:(NSString *)stackAddr error:(NSError **)error
 {
-    NSString *stringOfRMAddr = [self generateRMAddrViaStackAddr:stackAddr];
-
-    //atos -arch $2 -o $1 $stack_address
-    NSString *symbolization = [[TaskManager sharedManager] executeTask:@"/Applications/Xcode.app/Contents/Developer/usr/bin/atos"
-                                                             arguments:@[@"-arch",
-                                                                         self.params[kArmv],
-                                                                         @"-o",
-                                                                         self.params[kAppFilePath],
-                                                                         stringOfRMAddr]
-                                                                 error:error];
+    NSString *path = [[NSBundle mainBundle] pathForResource:@"symbolize" ofType:@"sh"];
+    [self addExecuteModeForShellFile:path];
+    
+    NSString *symbolization = [[TaskManager sharedManager] executeTask:path arguments:@[self.params[kAppFilePath], self.params[kArmv], stackAddr] error:nil];
+    DLog(@"symbolization: %@", symbolization);
 
     return symbolization;
-}
-
-- (NSString *)path:(NSString *)command
-{
-    return [NSString stringWithFormat:@"/usr/bin/%@", command];
-}
-
-/*
- @fn 获取虚拟内存地址
- */
-- (void)findVMAddr:(NSError **)error
-{
-    NSString *VMAddr = [self generateVMAddr:error];
-
-    if (VMAddr == nil)
-    {
-        return;
-    }
-
-    NSString *grepResult =
-    [self writeAndReadWithTempFile:VMAddr task:^id (NSString *tempFile) {
-        return [[TaskManager sharedManager] executeTask:[self path:@"grep"]
-                                              arguments:@[@"-A", @"1", @"-m", @"2", @"__TEXT", tempFile]
-                                                  error:error];
-    }];
-
-    if (grepResult == nil)
-    {
-        return;
-    }
-
-    NSArray *components = [grepResult componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-    grepResult = nil;
-    //    DLog(@"components: %@", components);
-
-    __block NSUInteger indexOfVmaddr = 0;
-    [components enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
-        NSString *string = obj;
-        if ([string hasPrefix:@"0x"])
-        {
-            indexOfVmaddr = idx;
-            *stop = YES;
-        }
-    }];
-
-    NSString *stringOfVMAddr = components[indexOfVmaddr];
-
-    NSScanner *scanner = [NSScanner scannerWithString:stringOfVMAddr];
-    unsigned int vmaddr = 0;
-    [scanner scanHexInt:&vmaddr];
-    self.vmAddr = vmaddr;
-
-    DLog(@"vmaddr: %@(16), %d(10)", stringOfVMAddr, self.vmAddr);
-}
-
-/*
- @fn 生成实际内存地址
- 
- @param stackAddr 栈地址
- 
- @ret 实际内存地址
- */
-- (NSString *)generateRMAddrViaStackAddr:(NSString *)stackAddr
-{
-    NSScanner *scanner = [NSScanner scannerWithString:stackAddr];
-    int stackAddress = 0;
-    [scanner scanInt:&stackAddress];
-
-    int rmAddr = stackAddress + self.vmAddr;
-
-    DLog(@"vmaddr: %x, stackaddr: %x, realaddr: %x", self.vmAddr, stackAddress, rmAddr);
-
-    return [NSString stringWithFormat:@"%x", rmAddr];
 }
 
 /*
@@ -279,16 +191,30 @@
     return [encodedAddrs copy];
 }
 
-- (NSString *)writeAndReadWithTempFile:(NSString *)string task:(WriteReadTempFileBlock)block
-{
-    NSString *tempFile = @"/Applications/tempFile.txt";
-    [string writeToFile:tempFile atomically:YES encoding:NSUTF8StringEncoding error:NULL];
-
-    NSString *ret = block(tempFile);
-
-    [[NSFileManager defaultManager] removeItemAtPath:tempFile error:NULL];
-
-    return ret;
+/**
+ *  @brief  changes the permissions of the script to allow it to be executed
+ 
+ The chmod command changes the permissions of the script to allow it to be executed by your NSTask object. 
+ If you tried to run your application without these permissions in place, you’d see the same “Launch path not accessible” error as before.
+ 
+ *
+ *  @param filePath script file path
+ */
+- (void)addExecuteModeForShellFile:(NSString *)filePath {
+    if (self.isExecuteMode.boolValue) {
+        return;
+    }
+    
+    NSError *error = nil;
+    [[TaskManager sharedManager] executeTask:@"/bin/chmod" arguments:@[@"+x", filePath] error:&error];
+    
+    if (error) {
+        [AppDelegate logError:error.localizedDescription];
+        [[NSUserDefaults standardUserDefaults] setBool:NO forKey:kExecuteModeForShellFileKey];
+    } else {
+        [[NSUserDefaults standardUserDefaults] setBool:YES forKey:kExecuteModeForShellFileKey];
+        self.isExecuteMode = @YES;
+    }
 }
 
 @end

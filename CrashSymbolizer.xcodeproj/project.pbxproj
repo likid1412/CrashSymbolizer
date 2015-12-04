@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		162426121C0C7F670010DDE7 /* symbolize.sh in Resources */ = {isa = PBXBuildFile; fileRef = 162426111C0C7F670010DDE7 /* symbolize.sh */; };
 		C6A7458117AAA27000E0B4D8 /* StackAddressProcessor.m in Sources */ = {isa = PBXBuildFile; fileRef = C6A7458017AAA27000E0B4D8 /* StackAddressProcessor.m */; };
 		C6D97F2917A8A97A00728699 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C6D97F2817A8A97A00728699 /* Cocoa.framework */; };
 		C6D97F3317A8A97A00728699 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C6D97F3117A8A97A00728699 /* InfoPlist.strings */; };
@@ -18,6 +19,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		162426111C0C7F670010DDE7 /* symbolize.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = symbolize.sh; sourceTree = "<group>"; };
 		C6469D4D17EF24C4007FFA95 /* CrashSymbolizer-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = "CrashSymbolizer-Info.plist"; path = "en.lproj/CrashSymbolizer-Info.plist"; sourceTree = "<group>"; };
 		C6A7457F17AAA26F00E0B4D8 /* StackAddressProcessor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = StackAddressProcessor.h; sourceTree = "<group>"; };
 		C6A7458017AAA27000E0B4D8 /* StackAddressProcessor.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = StackAddressProcessor.m; sourceTree = "<group>"; };
@@ -108,6 +110,7 @@
 				C6D97F3417A8A97A00728699 /* main.m */,
 				C6D97F3617A8A97A00728699 /* CrashSymbolizer-Prefix.pch */,
 				C6D97F3717A8A97A00728699 /* Credits.rtf */,
+				162426111C0C7F670010DDE7 /* symbolize.sh */,
 			);
 			name = "Supporting Files";
 			sourceTree = "<group>";
@@ -139,7 +142,7 @@
 			isa = PBXProject;
 			attributes = {
 				CLASSPREFIX = TerminalCommandTest;
-				LastUpgradeCheck = 0500;
+				LastUpgradeCheck = 0710;
 				ORGANIZATIONNAME = likid1412;
 			};
 			buildConfigurationList = C6D97F2017A8A97A00728699 /* Build configuration list for PBXProject "CrashSymbolizer" */;
@@ -167,6 +170,7 @@
 				C6D97F3317A8A97A00728699 /* InfoPlist.strings in Resources */,
 				C6D97F3917A8A97A00728699 /* Credits.rtf in Resources */,
 				C6D97F3F17A8A97A00728699 /* MainMenu.xib in Resources */,
+				162426121C0C7F670010DDE7 /* symbolize.sh in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -226,6 +230,7 @@
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
@@ -277,6 +282,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "$(SRCROOT)/CrashSymbolizer/CrashSymbolizer-Prefix.pch";
 				INFOPLIST_FILE = "$(SRCROOT)/CrashSymbolizer/en.lproj/CrashSymbolizer-Info.plist";
+				PRODUCT_BUNDLE_IDENTIFIER = "youming.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = CrashSymbolizer;
 				WRAPPER_EXTENSION = app;
 			};
@@ -290,6 +296,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "$(SRCROOT)/CrashSymbolizer/CrashSymbolizer-Prefix.pch";
 				INFOPLIST_FILE = "$(SRCROOT)/CrashSymbolizer/en.lproj/CrashSymbolizer-Info.plist";
+				PRODUCT_BUNDLE_IDENTIFIER = "youming.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = CrashSymbolizer;
 				WRAPPER_EXTENSION = app;
 			};

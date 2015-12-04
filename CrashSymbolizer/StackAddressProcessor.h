@@ -32,7 +32,7 @@ typedef id (^WriteReadTempFileBlock)(NSString *tempFile);
 
  @ret 符号化后的日志
  */
-- (NSString *)symbolizeCrashReport:(NSString *)report params:(NSDictionary *)params;
+- (void)symbolizeCrashReport:(NSString *)report params:(NSDictionary *)params completion:(void (^)(NSString *symbolization))completion;
 
 @end
 

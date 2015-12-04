@@ -10,8 +10,19 @@ usage:
 
 5. Click Transfer Button
 
-TODO List:
-1. Symbolize crash type file(.crash) directy.
+##Update
+
+**2015/11/30**
+
+1. 直接运行 shell 脚本
+2. 运行脚本放在后台线程，主线程只更新 UI
+3. 加入 CombonBox，提供 arm 下拉列表
+
+##TODO
+
+1. 文件路径可选
+2. Symbolize crash type file(.crash) directy.
+
 
 ======
 
@@ -46,9 +57,9 @@ TODO List:
 ```
 
 该脚本是老大传下来的，所以具体作者不甚清楚。
-另，小弟不才，根据改脚本简单写了个 GUI 的 Mac App CrashSymbolizer，可批量解析类型友盟统计收集的崩溃日志，输入解析内容格式如下：
+另，小弟不才，根据该脚本简单写了个 GUI 的 Mac App CrashSymbolizer，可批量解析类型友盟统计收集的崩溃日志，输入解析内容格式如下：
 ```
 5   MyApp                            0x000760c6 0x4f000 + 159942
 ```
 CrashSymbolizer 和 symbolicate.sh 都放在 Github 上，希望大家多多指点。
-GitHub: CrashSymbolize
+GitHub: CrashSymbolizer

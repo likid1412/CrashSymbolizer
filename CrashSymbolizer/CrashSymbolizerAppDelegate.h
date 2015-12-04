@@ -13,7 +13,7 @@
 @property (weak) IBOutlet NSWindow *window;
 @property (unsafe_unretained) IBOutlet NSTextView *argumentsTextView;
 @property (unsafe_unretained) IBOutlet NSTextView *resultTextView;
-@property (weak) IBOutlet NSTextField *archTextField;
+@property (weak) IBOutlet NSComboBox *armComboBox;
 @property (weak) IBOutlet NSTextField *appFilePathTextField;
 @property (weak) IBOutlet NSButton *checkBoxForShowAllInfos;
 @property (assign, nonatomic) BOOL shouldShowAllInfos;
