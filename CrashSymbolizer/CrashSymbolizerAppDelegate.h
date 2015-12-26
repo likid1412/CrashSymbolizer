@@ -8,6 +8,15 @@
 
 #import <Cocoa/Cocoa.h>
 
+@class CrashSymbolizerAppDelegate;
+
+extern CrashSymbolizerAppDelegate *AppDelegateInstance();
+
+
+
+FOUNDATION_EXPORT NSString * const CSDefaultAppFilePath;
+FOUNDATION_EXPORT NSString * const CSKeyAppFilePath;
+
 @interface CrashSymbolizerAppDelegate : NSObject <NSApplicationDelegate>
 
 @property (weak) IBOutlet NSWindow *window;
@@ -18,9 +27,7 @@
 @property (weak) IBOutlet NSButton *checkBoxForShowAllInfos;
 @property (assign, nonatomic) BOOL shouldShowAllInfos;
 
-- (IBAction)showAllInfos:(NSButton *)sender;
-- (IBAction)transfer:(NSButton *)sender;
-
+- (void)scrollToBottom;
 - (void)logError:(NSString *)msg;
 
 @end
