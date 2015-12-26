@@ -93,6 +93,7 @@
 		C6D97F2E17A8A97A00728699 /* CrashSymbolizer */ = {
 			isa = PBXGroup;
 			children = (
+				C6D97F3D17A8A97A00728699 /* MainMenu.xib */,
 				C6D97F3A17A8A97A00728699 /* CrashSymbolizerAppDelegate.h */,
 				C6D97F3B17A8A97A00728699 /* CrashSymbolizerAppDelegate.m */,
 				16197F881C15E058003AA6A3 /* MainWindowViewModel.h */,
@@ -101,7 +102,6 @@
 				C6A7458017AAA27000E0B4D8 /* StackAddressProcessor.m */,
 				C6D97F4517A8AA8100728699 /* TaskManager.h */,
 				C6D97F4617A8AA8100728699 /* TaskManager.m */,
-				C6D97F3D17A8A97A00728699 /* MainMenu.xib */,
 				C6D97F2F17A8A97A00728699 /* Supporting Files */,
 			);
 			path = CrashSymbolizer;

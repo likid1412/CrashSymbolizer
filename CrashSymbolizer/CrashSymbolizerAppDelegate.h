@@ -23,7 +23,7 @@ FOUNDATION_EXPORT NSString * const CSKeyAppFilePath;
 @property (unsafe_unretained) IBOutlet NSTextView *argumentsTextView;
 @property (unsafe_unretained) IBOutlet NSTextView *resultTextView;
 @property (weak) IBOutlet NSComboBox *armComboBox;
-@property (weak) IBOutlet NSTextField *appFilePathTextField;
+@property (unsafe_unretained) IBOutlet NSTextView *appFilePathTextView;
 @property (weak) IBOutlet NSButton *checkBoxForShowAllInfos;
 @property (assign, nonatomic) BOOL shouldShowAllInfos;
 

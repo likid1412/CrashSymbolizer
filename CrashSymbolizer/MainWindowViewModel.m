@@ -48,7 +48,7 @@
         return;
     }
     
-    NSString *appFilePath = AppDelegateInstance().appFilePathTextField.stringValue;
+    NSString *appFilePath = AppDelegateInstance().appFilePathTextView.string;
     if ( ![appFilePath isAbsolutePath])
     {
         [self logError:[NSString stringWithFormat:@"%@, file path is not an absolutePath", appFilePath]];
@@ -152,7 +152,7 @@
 - (BOOL)panel:(id)sender validateURL:(NSURL *)url error:(NSError **)outError {
     NSLog(@"%s url:%@", __FUNCTION__, url);
     
-    AppDelegateInstance().appFilePathTextField.stringValue = url.path;
+    AppDelegateInstance().appFilePathTextView.string = url.path;
     return YES;
 }
 
@@ -174,7 +174,7 @@
 
 - (BOOL)isValidFilePath
 {
-    NSString *appFilePath = AppDelegateInstance().appFilePathTextField.stringValue;
+    NSString *appFilePath = AppDelegateInstance().appFilePathTextView.string;
     if ( ![appFilePath isAbsolutePath])
     {
         [self logError:[NSString stringWithFormat:@"%@, file path is not an absolutePath", appFilePath]];
@@ -212,7 +212,7 @@
     DLog(@"appFilePath: %@", appFilePath);
     
     // save filePath
-    [[NSUserDefaults standardUserDefaults] setObject:AppDelegateInstance().appFilePathTextField.stringValue forKey:CSKeyAppFilePath];
+    [[NSUserDefaults standardUserDefaults] setObject:AppDelegateInstance().appFilePathTextView.string forKey:CSKeyAppFilePath];
     [[NSUserDefaults standardUserDefaults] synchronize];
     
     return YES;

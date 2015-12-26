@@ -34,7 +34,7 @@ NSString * const CSKeyAppFilePath = @"AppFilePath";
         filePath = CSDefaultAppFilePath;
     }
 
-    [self.appFilePathTextField setStringValue:filePath];
+    self.appFilePathTextView.string = filePath;
     [self.armComboBox selectItemAtIndex:0];
     self.checkBoxForShowAllInfos.state = NSOffState;
     
