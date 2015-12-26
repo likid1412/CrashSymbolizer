@@ -72,7 +72,7 @@ static NSString *kExecuteModeForShellFileKey = @"ExecuteModeForShellFileKey";
         if (symbolizedString == nil)
         {
             *stop = YES;
-            [AppDelegate logError:sError.localizedDescription];
+            [AppDelegateInstance() logError:sError.localizedDescription];
         }
 
         NSString *decodedString = [NSString stringWithFormat:@"%@ %@", value, symbolizedString] ?: @"";
@@ -185,7 +185,7 @@ static NSString *kExecuteModeForShellFileKey = @"ExecuteModeForShellFileKey";
 
         BOOL isEqualToAppName = [wordsWithoutEmptyString[1] isEqualToString:appName];
         // 如果需要显示所有信息，isEqualToAppName 置为 YES
-        if (AppDelegate.shouldShowAllInfos)
+        if (AppDelegateInstance().shouldShowAllInfos)
             isEqualToAppName = YES;
         /*
          5   MyApp                        	0x000760c6 0x4f000 + 159942
@@ -225,7 +225,7 @@ static NSString *kExecuteModeForShellFileKey = @"ExecuteModeForShellFileKey";
     [[TaskManager sharedManager] executeTask:@"/bin/chmod" arguments:@[@"+x", filePath] error:&error];
     
     if (error) {
-        [AppDelegate logError:error.localizedDescription];
+        [AppDelegateInstance() logError:error.localizedDescription];
         [[NSUserDefaults standardUserDefaults] setBool:NO forKey:kExecuteModeForShellFileKey];
     } else {
         [[NSUserDefaults standardUserDefaults] setBool:YES forKey:kExecuteModeForShellFileKey];
